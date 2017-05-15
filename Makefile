@@ -1,5 +1,5 @@
 # AWS CONFIG
-AWS_PROFILE = dev
+#AWS_PROFILE = dev
 AWS_REGION = eu-west-1
 # PIPELINE CONFIG
 PIPELINE_ARTIFACT_BUCKET_NAME = patant-pipline-data
@@ -28,7 +28,7 @@ build-patanttime:
 	yarn install --production && \
 	cd ../deploy && \
 	aws cloudformation package \
-		--template-file samTemplate.yaml \
+		--template-file cloudformationSAM.yml \
 		--s3-bucket $(PIPELINE_ARTIFACT_BUCKET_NAME) \
 		--s3-prefix patanttime \
                 --output-template-file NewSamTemplate.yaml \
