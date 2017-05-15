@@ -31,7 +31,7 @@ build-patanttime:
 		--template-file cloudformationSAM.yml \
 		--s3-bucket $(PIPELINE_ARTIFACT_BUCKET_NAME) \
 		--s3-prefix patanttime \
-                --output-template-file NewSamTemplate.yaml \
+		--output-template-file patanttimeSamTemplate.yaml \
 		--region $(AWS_REGION)
 
 deploy:
