@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  PipeLineDataBucketName:
+    Type: String
+    AllowedPattern: ^[a-z0-9.-]*$
+    Description: Name of the bucket storing data for the buildpipline
+
+
+Resources:
+  PatantCodePipelineArtifacts:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref PipeLineDataBucketName
+      Tags:
+        - Key: Project
+          Value: patantCodepipeline
