@@ -7,10 +7,75 @@ Parameters:
 
 
 Resources:
-  PatantCodePipelineArtifacts:
+  CodePipelineArtifactsBucket:
     Type: "AWS::S3::Bucket"
     Properties:
       BucketName: !Ref PipeLineDataBucketName
       Tags:
         - Key: Project
           Value: patantCodepipeline
+
+
+  PipeLineRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service: "codebuild.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+  PipeLinePolicies:
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "PipelinePolicies"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Action:
+              - "logs:CreateLogGroup"
+              - "logs:CreateLogStream"
+              - "logs:PutLogEvents"
+            Resource: "arn:aws:logs:*:*:*"
+          -
+            Effect: "Allow"
+            Action:
+              - "s3:PutObject"
+              - "s3:GetObject"
+              - "s3:GetObjectVersion"
+            Resource:
+              - "arn:aws:s3:::codepipeline-eu-west-1-*"
+              - !Join [ "", [ "arn:aws:s3:::", !Ref CodePipelineArtifactsBucket, "*" ] ]
+      Roles:
+        - !Ref PipeLineRole
+
+
+  BuildPatantTime:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: PatantTimeBuild
+      Description: Build for lambda function patantTime
+      ServiceRole: !GetAtt PipeLineRole.Arn
+      Artifacts:
+        Type: s3
+        Location: !Ref CodePipelineArtifactsBucket
+        Name: functionBuild
+        NamespaceType: NONE
+        Packaging: ZIP
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/nodejs:6.3.1
+      Source:
+        Location: https://github.com/patant-dw/codepipeline.git
+        Type: GITHUB
+      TimeoutInMinutes: 10
+      Tags:
+        - Key: Project
+          Value: patantTime

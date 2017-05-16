@@ -1,5 +1,4 @@
 # AWS CONFIG
-#AWS_PROFILE = dev
 AWS_REGION = eu-west-1
 # PIPELINE CONFIG
 PIPELINE_ARTIFACT_BUCKET_NAME = patant-pipline-data
@@ -9,11 +8,11 @@ deploy-pipeline:
 	       	--stack-name $(STACKNAME) \
 		--parameters ParameterKey=PipeLineDataBucketName,ParameterValue=$(PIPELINE_ARTIFACT_BUCKET_NAME) \
 		--template-body file://cloudformationPipeline.yml \
+		--capabilities CAPABILITY_IAM \
 		--profile $(AWS_PROFILE) \
 		--region $(AWS_REGION)
 	aws cloudformation wait stack-create-complete \
 		--stack-name=$(STACKNAME) \
-		--profile $(AWS_PROFILE) \
 		--region $(AWS_REGION)
 
 test-patanttime:
