@@ -9,6 +9,7 @@ phases:
       - echo Build started on `date`
       - make build-patanttime
 artifacts:
+  discard-paths: yes
   type: zip
   files:
     - functions/patanttime/deploy/patanttimeSamTemplate.yaml
