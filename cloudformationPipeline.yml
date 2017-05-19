@@ -28,6 +28,7 @@ Resources:
               Service: 
                 - "codebuild.amazonaws.com"
                 - "codepipeline.amazonaws.com"
+                - "cloudformation.amazonaws.com"
             Action:
               - "sts:AssumeRole"
       Path: "/"
@@ -82,6 +83,9 @@ Resources:
             Effect: "Allow"
             Action:
               - "cloudformation:*"
+              - "lambda:*"
+              - "iam:*"
+              - "apigateway:*"
             Resource: "*"
       Roles:
         - !Ref PipeLineRole
@@ -138,7 +142,7 @@ Resources:
                 Owner: patant-dw
                 Repo: codepipeline
                 Branch: master
-                OAuthToken: 7038924169cbfcc2890cf50fd9fe0db429bf26a2
+                OAuthToken: <Your github token>
               RunOrder: 1
         -
           Name: Build
@@ -194,7 +198,7 @@ Resources:
                 Version: 1
                 Provider: CloudFormation
               Configuration:
-                StackName: patantTime,
+                StackName: patantTime
                 ActionMode: CHANGE_SET_EXECUTE
                 ChangeSetName: pipeline
               RunOrder: 1
