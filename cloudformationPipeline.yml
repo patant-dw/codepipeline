@@ -15,7 +15,7 @@ Resources:
         - Key: Project
           Value: patantCodepipeline
 
-
+# Role for codeBuild
   PipeLineRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -25,7 +25,9 @@ Resources:
           -
             Effect: "Allow"
             Principal:
-              Service: "codebuild.amazonaws.com"
+              Service: 
+                - "codebuild.amazonaws.com"
+                - "codepipeline.amazonaws.com"
             Action:
               - "sts:AssumeRole"
       Path: "/"
@@ -50,12 +52,41 @@ Resources:
               - "s3:GetObject"
               - "s3:GetObjectVersion"
             Resource:
-              - "arn:aws:s3:::codepipeline-eu-west-1-*"
+              - "arn:aws:s3:::codepipeline*"
               - !Join [ "", [ "arn:aws:s3:::", !Ref CodePipelineArtifactsBucket, "*" ] ]
+          -
+            Effect: "Allow"
+            Action:
+              - "codecommit:CancelUploadArchive"
+              - "codecommit:GetBranch"
+              - "codecommit:GetCommit"
+              - "codecommit:GetUploadArchiveStatus"
+              - "codecommit:UploadArchive"
+            Resource: "*"
+          - 
+            Effect: "Allow"
+            Action:
+              - "codedeploy:CreateDeployment"
+              - "codedeploy:GetApplicationRevision"
+              - "codedeploy:GetDeployment"
+              - "codedeploy:GetDeploymentConfig"
+              - "codedeploy:RegisterApplicationRevision"
+            Resource: "*"
+          - 
+            Effect: "Allow"
+            Action:
+              - "codebuild:BatchGetBuilds"
+              - "codebuild:StartBuild"
+            Resource: "*"
+          - 
+            Effect: "Allow"
+            Action:
+              - "cloudformation:*"
+            Resource: "*"
       Roles:
         - !Ref PipeLineRole
 
-
+# Code build for the lambda functrion. Using buildspec.yml in the root of the project
   BuildPatantTime:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -79,3 +110,91 @@ Resources:
       Tags:
         - Key: Project
           Value: patantTime
+
+  BuildPatantPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Location: !Ref CodePipelineArtifactsBucket
+        Type: S3
+      Name: PatantTimePipeline
+      RestartExecutionOnUpdate: false
+      RoleArn: !GetAtt PipeLineRole.Arn
+      Stages: 
+        - 
+          Name: Source
+          Actions: 
+            - 
+              Name: SourceAction
+              ActionTypeId: 
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              OutputArtifacts: 
+                - 
+                  Name: SourceOutput
+              Configuration: 
+                Owner: patant-dw
+                Repo: codepipeline
+                Branch: master
+                OAuthToken: 7038924169cbfcc2890cf50fd9fe0db429bf26a2
+              RunOrder: 1
+        -
+          Name: Build
+          Actions:
+            -
+              Name: CodeBuild
+              InputArtifacts:
+                -
+                  Name: SourceOutput
+              ActionTypeId:
+                Category: Build 
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref BuildPatantTime
+              OutputArtifacts: 
+                - 
+                  Name: CodebuildOutput
+              RunOrder: 1
+        -
+          Name: DeployChangeSet
+          Actions:
+            -
+              Name: DeployChangeSet
+              InputArtifacts:
+                -
+                  Name: CodebuildOutput
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                ChangeSetName: pipeline
+                RoleArn: !GetAtt PipeLineRole.Arn
+                Capabilities: CAPABILITY_IAM
+                StackName: patantTime
+                TemplatePath: CodebuildOutput::patanttimeSamTemplate.yaml
+              RunOrder: 1
+        -
+          Name: ApplyChangeSet
+          Actions:
+            -
+              Name: ApplyChangeSet
+              InputArtifacts:
+                -
+                  Name: CodebuildOutput
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                StackName: patantTime,
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: pipeline
+              RunOrder: 1

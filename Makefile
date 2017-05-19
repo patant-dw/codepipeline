@@ -1,7 +1,7 @@
 # AWS CONFIG
 AWS_REGION = eu-west-1
 # PIPELINE CONFIG
-PIPELINE_ARTIFACT_BUCKET_NAME = patant-pipline-data
+PIPELINE_ARTIFACT_BUCKET_NAME = patant-time-pipeline
 deploy-pipeline:
 	$(eval STACKNAME=patantpipeline)
 	aws cloudformation create-stack \
